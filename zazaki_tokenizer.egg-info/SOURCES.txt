@@ -1,0 +1,10 @@
+pyproject.toml
+tests/test_python.py
+zazaki_tokenizer/__init__.py
+zazaki_tokenizer/_zazaki_tokenizer.cpython-314-x86_64-linux-gnu.so
+zazaki_tokenizer/cli.py
+zazaki_tokenizer.egg-info/PKG-INFO
+zazaki_tokenizer.egg-info/SOURCES.txt
+zazaki_tokenizer.egg-info/dependency_links.txt
+zazaki_tokenizer.egg-info/entry_points.txt
+zazaki_tokenizer.egg-info/top_level.txt

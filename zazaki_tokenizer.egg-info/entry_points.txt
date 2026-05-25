@@ -1,0 +1,2 @@
+[console_scripts]
+zazaki_tokenizer = zazaki_tokenizer.cli:main

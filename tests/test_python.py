@@ -4,12 +4,12 @@ import pytest
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src", "bindings"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 try:
-    from _zazaki_tokenizer import Tokenizer, count_tokens
+    from zazaki_tokenizer import Tokenizer, count_tokens
 except ImportError:
-    pytest.skip("Python bindings not built", allow_module_level=True)
+    pytest.skip("zazaki_tokenizer package not found", allow_module_level=True)
 
 
 class TestTokenizer:

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zazaki_tokenizer"
+version = "1.0.0"
+description = "Fast token counting for OpenAI models (C++ backend)"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.8"
+license = { text = "MIT" }
+
+[project.scripts]
+zazaki_tokenizer = "zazaki_tokenizer.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["zazaki_tokenizer*"]
+
+[tool.setuptools.package-data]
+zazaki_tokenizer = ["_zazaki_tokenizer*.so"]

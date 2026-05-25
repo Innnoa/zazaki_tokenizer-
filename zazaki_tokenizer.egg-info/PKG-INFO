@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: zazaki_tokenizer
+Version: 1.0.0
+Summary: Fast token counting for OpenAI models (C++ backend)
+License: MIT
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
