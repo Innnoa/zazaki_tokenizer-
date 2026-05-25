@@ -16,9 +16,14 @@ public:
 
     const openai::Encoder* get_encoder(const std::string& model_name) const;
 
+    void register_model(const std::string& model_name, EncoderPtr encoder);
+    void register_from_file(const std::string& model_name,
+                            const std::string& file_path);
+    bool has_model(const std::string& model_name) const;
+
 private:
     Registry();
-    std::unordered_map<std::string, EncoderPtr> models_;
+    mutable std::unordered_map<std::string, EncoderPtr> models_;
 };
 
 } // namespace zazaki_tokenizer

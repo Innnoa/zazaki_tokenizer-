@@ -27,9 +27,13 @@ struct MergeCandidate {
 } // namespace
 
 Encoder::Encoder(TiktokenData data) : data_(std::move(data)) {
-    pattern_ = std::make_unique<re2::RE2>(data_.regex_pattern);
-    if (!pattern_->ok()) {
-        throw std::runtime_error("invalid regex pattern: " + pattern_->error());
+    if (data_.regex_pattern.empty() || data_.regex_pattern == ".") {
+        pattern_ = nullptr;
+    } else {
+        pattern_ = std::make_unique<re2::RE2>(data_.regex_pattern);
+        if (!pattern_->ok()) {
+            throw std::runtime_error("invalid regex pattern: " + pattern_->error());
+        }
     }
 }
 
@@ -150,6 +154,9 @@ std::vector<uint32_t> Encoder::bpe_merge(const std::string& piece_bytes) const {
 }
 
 std::vector<uint32_t> Encoder::encode(const std::string& text) const {
+    if (!pattern_) {
+        return bpe_merge(text);
+    }
     auto pieces = split_by_pattern(text);
     std::vector<uint32_t> result;
     for (const auto& piece : pieces) {
@@ -171,6 +178,9 @@ std::string Encoder::decode(const std::vector<uint32_t>& ids) const {
 }
 
 size_t Encoder::count(const std::string& text) const {
+    if (!pattern_) {
+        return bpe_merge(text).size();
+    }
     auto pieces = split_by_pattern(text);
     size_t total = 0;
     for (const auto& piece : pieces) {
