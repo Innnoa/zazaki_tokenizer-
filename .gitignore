@@ -5,3 +5,4 @@ __pycache__/
 *.egg-info/
 zazaki_tokenizer/_zazaki_tokenizer*.so
 Testing/
+docs/
