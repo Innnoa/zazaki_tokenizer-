@@ -16,6 +16,7 @@ namespace openai {
 class Encoder {
 public:
     explicit Encoder(TiktokenData data);
+    ~Encoder();
 
     std::vector<uint32_t> encode(const std::string& text) const;
     std::string decode(const std::vector<uint32_t>& ids) const;

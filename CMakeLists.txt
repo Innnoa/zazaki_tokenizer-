@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
-project(zazaki_tokenizer VERSION 1.0.0 LANGUAGES CXX)
+project(zazaki_tokenizer VERSION 1.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Options
 option(BUILD_CLI "Build CLI tool" ON)
@@ -12,6 +13,7 @@ option(BUILD_TESTS "Build tests" OFF)
 
 # Fetch RE2 for regex pre-tokenization
 include(FetchContent)
+set(BUILD_SHARED_LIBS OFF)
 FetchContent_Declare(
     re2
     GIT_REPOSITORY https://github.com/google/re2.git
@@ -19,6 +21,7 @@ FetchContent_Declare(
 )
 set(RE2_BUILD_TESTING OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(re2)
+set_target_properties(re2 PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # Fetch pybind11 if Python bindings enabled
 if(BUILD_PYTHON)

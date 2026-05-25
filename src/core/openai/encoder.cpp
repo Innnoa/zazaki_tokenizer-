@@ -15,6 +15,8 @@ Encoder::Encoder(TiktokenData data) : data_(std::move(data)) {
     }
 }
 
+Encoder::~Encoder() = default;
+
 std::vector<std::string> Encoder::split_by_pattern(const std::string& text) const {
     std::vector<std::string> pieces;
     re2::StringPiece input(text);
@@ -26,7 +28,7 @@ std::vector<std::string> Encoder::split_by_pattern(const std::string& text) cons
         if (match_start > last_end) {
             pieces.emplace_back(text.substr(last_end, match_start - last_end));
         }
-        pieces.emplace_back(match.as_string());
+        pieces.emplace_back(std::string(match));
         last_end = match_start + match.size();
     }
 

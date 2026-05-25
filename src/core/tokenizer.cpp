@@ -14,7 +14,8 @@ Tokenizer Tokenizer::for_model(const std::string& model_name) {
 EncodingResult Tokenizer::encode(const std::string& text) const {
     auto* enc = Registry::instance().get_encoder(model_name_);
     auto ids = enc->encode(text);
-    return {std::move(ids), ids.size()};
+    size_t count = ids.size();
+    return {std::move(ids), count};
 }
 
 std::string Tokenizer::decode(const std::vector<uint32_t>& token_ids) const {

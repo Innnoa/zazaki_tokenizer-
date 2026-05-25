@@ -18,8 +18,26 @@ Binary format (all integers little-endian u32):
 """
 
 import struct
+import re
 import sys
 from pathlib import Path
+
+
+def sanitize_pattern(pattern):
+    """Remove regex features that RE2 does not support.
+
+    Converts: ?+ -> ?, ++ -> +, *+ -> *, {n,m}+ -> {n,m}
+    Removes: (?!...) negative lookahead assertions and their alternatives
+    """
+    # Remove possessive quantifiers
+    pattern = re.sub(r'([?+*}])[+]', r'\1', pattern)
+    # Remove negative/positive lookahead assertions and the preceding |
+    # Pattern: |\s+(?!\S)  or similar constructs
+    pattern = re.sub(r'\|?\s*\(\?[=!][^)]*\)', '', pattern)
+    # Clean up double || or trailing |
+    pattern = re.sub(r'\|+', '|', pattern)
+    pattern = re.sub(r'\|$', '', pattern)
+    return pattern
 
 
 def write_u32(f, val):
@@ -80,6 +98,7 @@ def main():
 
     for enc_name, output_path in encodings:
         ranks, special, pattern = load_encoding(enc_name)
+        pattern = sanitize_pattern(pattern)
         write_tiktoken(output_path, ranks, special, pattern)
         print(f"Generated {output_path} "
               f"({len(ranks)} ranks, {len(special)} special tokens)")

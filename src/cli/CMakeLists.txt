@@ -1,2 +1,2 @@
 add_executable(zazaki_tokenizer main.cpp)
-target_link_libraries(zazaki_tokenizer PRIVATE zazaki_tokenizer)
+target_link_libraries(zazaki_tokenizer PRIVATE zazaki_tokenizer_core)
