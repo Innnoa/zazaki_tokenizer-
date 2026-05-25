@@ -23,11 +23,6 @@ public:
     size_t count(const std::string& text) const;
 
 private:
-    struct Piece {
-        std::string bytes;
-        uint32_t rank;
-    };
-
     std::vector<std::string> split_by_pattern(const std::string& text) const;
     std::vector<uint32_t> bpe_merge(const std::string& piece_bytes) const;
 

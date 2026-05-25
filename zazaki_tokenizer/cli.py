@@ -4,7 +4,6 @@
 import argparse
 import json
 import sys
-import os
 from pathlib import Path
 
 from zazaki_tokenizer import Tokenizer
@@ -23,6 +22,8 @@ def main():
     p_count.add_argument("-m", "--model", default="gpt-4o", help="Model name")
     p_count.add_argument("-f", "--file", help="Read input from file")
     p_count.add_argument("--json", action="store_true", help="Output JSON")
+    p_count.add_argument("--stream", action="store_true",
+                         help="Stream stdin line by line (cumulative count)")
 
     # encode
     p_enc = sub.add_parser("encode", help="Encode text to token IDs")
@@ -45,7 +46,7 @@ def main():
         print(f"error: {e}", file=sys.stderr)
         return 1
 
-    def read_input():
+    def read_full():
         if hasattr(args, "file") and args.file:
             return Path(args.file).read_text()
         if hasattr(args, "text") and args.text:
@@ -53,15 +54,27 @@ def main():
         return sys.stdin.read()
 
     if args.command == "count":
-        text = read_input()
-        n = t.count(text)
-        if args.json:
-            print(json.dumps({"tokens": n}))
+        if args.stream and not args.file and not args.text:
+            total = 0
+            line_count = 0
+            for line in sys.stdin:
+                total += t.count(line)
+                line_count += 1
+                if args.json:
+                    print(json.dumps({"line": line_count, "cumulative": total}),
+                          flush=True)
+                else:
+                    print(f"{total} tokens (lines: {line_count})", flush=True)
         else:
-            print(f"{n} tokens")
+            text = read_full()
+            n = t.count(text)
+            if args.json:
+                print(json.dumps({"tokens": n}))
+            else:
+                print(f"{n} tokens")
 
     elif args.command == "encode":
-        text = read_input()
+        text = read_full()
         result = t.encode(text)
         if args.json:
             print(json.dumps({

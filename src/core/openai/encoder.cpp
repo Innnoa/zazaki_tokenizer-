@@ -4,9 +4,27 @@
 
 #include <algorithm>
 #include <limits>
+#include <queue>
+#include <vector>
 
 namespace zazaki_tokenizer {
 namespace openai {
+
+namespace {
+
+struct MergeCandidate {
+    uint32_t rank;
+    size_t pos;
+    uint32_t left_ver;
+    uint32_t right_ver;
+
+    bool operator>(const MergeCandidate& o) const {
+        if (rank != o.rank) return rank > o.rank;
+        return pos > o.pos;
+    }
+};
+
+} // namespace
 
 Encoder::Encoder(TiktokenData data) : data_(std::move(data)) {
     pattern_ = std::make_unique<re2::RE2>(data_.regex_pattern);
@@ -40,56 +58,94 @@ std::vector<std::string> Encoder::split_by_pattern(const std::string& text) cons
 }
 
 std::vector<uint32_t> Encoder::bpe_merge(const std::string& piece_bytes) const {
-    if (piece_bytes.empty()) {
-        return {};
-    }
-
-    std::vector<Piece> parts;
-    parts.reserve(piece_bytes.size());
-
-    for (unsigned char c : piece_bytes) {
-        std::string byte_str(1, static_cast<char>(c));
+    size_t n = piece_bytes.size();
+    if (n == 0) return {};
+    if (n == 1) {
+        std::string byte_str(1, piece_bytes[0]);
         auto it = data_.rank_map.find(byte_str);
         if (it == data_.rank_map.end()) {
             throw std::runtime_error(
-                "byte not found in vocabulary: " + std::to_string(static_cast<int>(c)));
+                "byte not found in vocabulary: " +
+                std::to_string(static_cast<int>(static_cast<unsigned char>(piece_bytes[0]))));
         }
-        parts.push_back({std::move(byte_str), it->second});
+        return {it->second};
     }
 
-    if (parts.size() == 1) {
-        return {parts[0].rank};
+    // Initialize tokens
+    std::vector<std::string> token_bytes(n);
+    std::vector<uint32_t> token_prev(n);
+    std::vector<uint32_t> token_next(n);
+    std::vector<uint32_t> token_ver(n, 1);
+    constexpr uint32_t kNone = std::numeric_limits<uint32_t>::max();
+
+    for (size_t i = 0; i < n; ++i) {
+        token_bytes[i] = std::string(1, piece_bytes[i]);
+        token_prev[i] = (i > 0) ? static_cast<uint32_t>(i - 1) : kNone;
+        token_next[i] = (i + 1 < n) ? static_cast<uint32_t>(i + 1) : kNone;
     }
 
-    while (true) {
-        uint32_t best_rank = std::numeric_limits<uint32_t>::max();
-        size_t best_idx = 0;
-        bool found = false;
-
-        for (size_t i = 0; i + 1 < parts.size(); ++i) {
-            std::string merged_bytes = parts[i].bytes + parts[i + 1].bytes;
-            auto it = data_.rank_map.find(merged_bytes);
-            if (it != data_.rank_map.end() && it->second < best_rank) {
-                best_rank = it->second;
-                best_idx = i;
-                found = true;
-            }
+    // Build initial heap
+    std::priority_queue<MergeCandidate, std::vector<MergeCandidate>, std::greater<>> heap;
+    auto try_push = [&](size_t left) {
+        size_t right = token_next[left];
+        if (right == kNone) return;
+        std::string merged = token_bytes[left] + token_bytes[right];
+        auto it = data_.rank_map.find(merged);
+        if (it != data_.rank_map.end()) {
+            heap.push({it->second, left, token_ver[left], token_ver[right]});
         }
+    };
 
-        if (!found) {
-            break;
-        }
-
-        parts[best_idx].bytes += parts[best_idx + 1].bytes;
-        parts[best_idx].rank = best_rank;
-        parts.erase(parts.begin() + static_cast<long>(best_idx + 1));
+    for (size_t i = 0; i + 1 < n; ++i) {
+        try_push(i);
     }
 
+    // Merge loop
+    while (!heap.empty()) {
+        auto cand = heap.top();
+        heap.pop();
+
+        size_t left = cand.pos;
+        size_t right = token_next[left];
+        if (right == kNone) continue;
+        if (cand.left_ver != token_ver[left]) continue;
+        if (cand.right_ver != token_ver[right]) continue;
+
+        // Perform the merge
+        token_bytes[left] += token_bytes[right];
+        token_ver[left]++;
+        token_ver[right]++;
+
+        size_t right_next = token_next[right];
+        token_next[left] = right_next;
+        if (right_next != kNone) {
+            token_prev[right_next] = static_cast<uint32_t>(left);
+        }
+        token_bytes[right].clear();
+
+        // Push new candidates involving the merged token
+        size_t left_neighbor = token_prev[left];
+        if (left_neighbor != kNone) {
+            try_push(left_neighbor);
+        }
+        if (token_next[left] != kNone) {
+            try_push(left);
+        }
+    }
+
+    // Collect result in order
     std::vector<uint32_t> result;
-    result.reserve(parts.size());
-    for (const auto& p : parts) {
-        result.push_back(p.rank);
+    size_t cur = 0;
+    while (cur != kNone) {
+        auto it = data_.rank_map.find(token_bytes[cur]);
+        if (it == data_.rank_map.end()) {
+            throw std::runtime_error(
+                "token bytes not found in vocabulary after merge");
+        }
+        result.push_back(it->second);
+        cur = token_next[cur];
     }
+
     return result;
 }
 

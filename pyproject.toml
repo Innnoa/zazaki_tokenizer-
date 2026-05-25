@@ -18,3 +18,18 @@ include = ["zazaki_tokenizer*"]
 
 [tool.setuptools.package-data]
 zazaki_tokenizer = ["_zazaki_tokenizer*.so"]
+
+[tool.cibuildwheel]
+build = ["cp38-*", "cp39-*", "cp310-*", "cp311-*", "cp312-*", "cp313-*", "cp314-*"]
+skip = ["*-musllinux*", "*_i686"]
+before-build = [
+    "cmake -S . -B build -DBUILD_PYTHON=ON -DBUILD_CLI=OFF -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release",
+    "cmake --build build -j$(nproc)",
+]
+repair-wheel-command = ""
+
+[tool.cibuildwheel.linux]
+before-all = [
+    "yum install -y cmake3 || apt-get update && apt-get install -y cmake || true",
+    "ln -sf /usr/bin/cmake3 /usr/bin/cmake 2>/dev/null || true",
+]

@@ -27,14 +27,14 @@ def sanitize_pattern(pattern):
     """Remove regex features that RE2 does not support.
 
     Converts: ?+ -> ?, ++ -> +, *+ -> *, {n,m}+ -> {n,m}
-    Removes: (?!...) negative lookahead assertions and their alternatives
+    Removes: (?!...) and (?=...) lookahead assertions
     """
     # Remove possessive quantifiers
     pattern = re.sub(r'([?+*}])[+]', r'\1', pattern)
-    # Remove negative/positive lookahead assertions and the preceding |
-    # Pattern: |\s+(?!\S)  or similar constructs
-    pattern = re.sub(r'\|?\s*\(\?[=!][^)]*\)', '', pattern)
-    # Clean up double || or trailing |
+    # Remove lookahead assertions — RE2 rejects (?= and (?!
+    # Known case: \s+(?!\S) → the trailing whitespace check is handled by \s+$
+    pattern = re.sub(r'\(\?[=!][^)]*\)', '', pattern)
+    # Clean up: merge consecutive | and remove trailing |
     pattern = re.sub(r'\|+', '|', pattern)
     pattern = re.sub(r'\|$', '', pattern)
     return pattern

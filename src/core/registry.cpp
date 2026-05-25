@@ -1,5 +1,6 @@
 #include "registry.h"
 
+#include <mutex>
 #include <stdexcept>
 
 extern const unsigned char cl100k_base_tiktoken[];
@@ -29,8 +30,13 @@ Registry::Registry() {
 }
 
 Registry& Registry::instance() {
-    static Registry reg;
-    return reg;
+    static std::once_flag init_flag;
+    static Registry* reg = nullptr;
+    std::call_once(init_flag, [] {
+        static Registry instance;
+        reg = &instance;
+    });
+    return *reg;
 }
 
 const openai::Encoder* Registry::get_encoder(const std::string& model_name) const {
