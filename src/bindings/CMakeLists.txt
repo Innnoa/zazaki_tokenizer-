@@ -1,0 +1,2 @@
+pybind11_add_module(_zazaki_tokenizer python_bindings.cpp)
+target_link_libraries(_zazaki_tokenizer PRIVATE zazaki_tokenizer)
